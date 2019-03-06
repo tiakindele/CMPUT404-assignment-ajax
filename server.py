@@ -21,9 +21,11 @@
 #     pip install flask
 
 
-import flask
-from flask import Flask, request
 import json
+import flask
+# https://stackoverflow.com/questions/11914472/stringio-in-python3
+from io import StringIO
+from flask import Flask, request, redirect
 app = Flask(__name__)
 app.debug = True
 
@@ -43,7 +45,7 @@ class World:
         self.space[entity] = entry
 
     def set(self, entity, data):
-        self.space[entity] = data
+        self.space[entity] = (data)
 
     def clear(self):
         self.space = dict()
@@ -74,27 +76,32 @@ def flask_post_json():
 @app.route("/")
 def hello():
     '''Return something coherent here.. perhaps redirect to /static/index.html '''
-    return None
+    return redirect("http://127.0.0.1:5000/static/index.html",code=302)
 
 @app.route("/entity/<entity>", methods=['POST','PUT'])
 def update(entity):
     '''update the entities via this interface'''
-    return None
+    request.data = request.data.encode('utf8')
+    j_data = flask_post_json()
+    for key, val in j_data.items():
+        myWorld.update(entity, key, val)
+    return json.dumps(myWorld.get(entity)), 200
 
 @app.route("/world", methods=['POST','GET'])    
 def world():
     '''you should probably return the world here'''
-    return None
+    return json.dumps(myWorld.world(),StringIO),200
 
 @app.route("/entity/<entity>")    
 def get_entity(entity):
     '''This is the GET version of the entity interface, return a representation of the entity'''
-    return None
+    return json.dumps(myWorld.get(entity),StringIO),200
 
 @app.route("/clear", methods=['POST','GET'])
 def clear():
     '''Clear the world out!'''
-    return None
+    myWorld.clear()
+    return json.dumps(myWorld.world(),StringIO),200
 
 if __name__ == "__main__":
     app.run()
